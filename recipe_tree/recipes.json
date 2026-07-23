@@ -1,32 +1,47 @@
 {
-    "iron_pickaxe": {
-        "type": "crafting",
-        "name": "鐵鎬",
-        "image": "iron_pickaxe.png",
-        "pattern": [
-            [
-                "iron_ingot",
-                "iron_ingot",
-                "iron_ingot"
-            ],
-            [
-                "",
-                "stick",
-                ""
-            ],
-            [
-                "",
-                "stick",
-                ""
-            ]
-        ]
+    "items":{
+        "iron_ingot":{
+            "name":"鐵錠",
+            "image":"iron_ingot.png"
+        },
+
+        "stick":{
+            "name":"木棍",
+            "image":"stick.png"
+        },
+
+        "iron_pickaxe":{
+            "name":"鐵鎬",
+            "image":"iron_pickaxe.png"
+        }
     },
 
-    "iron_ingot": {
-        "type": "furnace",
-        "name": "鐵錠",
-        "image": "iron_ingot.png",
-        "input": "iron_ore",
-        "fuel": "coal"
+
+    "recipes":{
+
+        "iron_pickaxe":{
+
+            "type":"crafting",
+
+            "pattern":[
+                [
+                    "iron_ingot",
+                    "iron_ingot",
+                    "iron_ingot"
+                ],
+                [
+                    "",
+                    "stick",
+                    ""
+                ],
+                [
+                    "",
+                    "stick",
+                    ""
+                ]
+            ]
+
+        }
+
     }
 }
