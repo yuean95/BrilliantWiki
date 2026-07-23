@@ -1,327 +1,241 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Minecraft Recipe Tree</title>
-
-<style>
-body {
-    background: #202020;
-    color: white;
-    font-family: Arial, "Microsoft JhengHei", sans-serif;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-#recipes {
-    width: 100%;
-    max-width: 900px;
-}
-
-.recipe-card {
-    background: #303030;
-    border: 2px solid #777;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 30px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 30px;
-}
-
-.item {
-    position: relative;
-    text-align: center;
-    cursor: pointer;
-}
-
-.item img {
-    width: 64px;
-    height: 64px;
-    image-rendering: pixelated;
-}
-
-.item-name {
-    margin-top: 5px;
-}
-
-.tooltip {
-    display: none;
-    position: absolute;
-
-    bottom: 85px;
-    left: 50%;
-    transform: translateX(-50%);
-
-    background: #111;
-    border: 2px solid #aaa;
-    padding: 10px;
-
-    width: 180px;
-    z-index: 10;
-}
-
-.item.show .tooltip {
-    display: block;
-}
-
-@media (hover:hover) {
-    .item:hover .tooltip {
-        display: block;
-    }
-}
-
-.crafting {
-    display: grid;
-    grid-template-columns: repeat(3, 64px);
-    gap: 4px;
-}
-
-.cell {
-    width: 64px;
-    height: 64px;
-
-    background: #555;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cell .item img {
-    width: 56px;
-    height: 56px;
-}
-
-.arrow {
-    font-size: 40px;
-}
-
-.furnace {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-@media(max-width:600px) {
-
-    .recipe-card {
-        flex-direction: column;
-    }
-
-    .tooltip {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-    }
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Recipe Tree</title>
+    <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre/cytoscape-dagre.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #202020;
+            color: white;
+            font-family: Arial, "Microsoft JhengHei", sans-serif;
+        }
+        
+        #graph {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .node-label {
+            position: absolute;
+            background: #111;
+            border: 2px solid #aaa;
+            border-radius: 5px;
+            padding: 10px;
+            display: none;
+            width: 220px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .crafting {
+            display: grid;
+            grid-template-columns: repeat(3,45px);
+            gap: 2px;
+            margin-top: 8px;
+        }
+        
+        .cell {
+            width: 45px;
+            height: 45px;
+            background: #555;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .cell img {
+            width: 38px;
+            height: 38px;
+            image-rendering: pixelated;
+        }
+        
+        .furnace {
+            margin-top: 8px;
+        }
+    </style>
 </head>
-
-
 <body>
-
-<h1>Minecraft Recipe Tree</h1>
-
-<div id="recipes">
-載入中...
-</div>
-
-
-<script>
-
-let items = {};
-let recipes = {};
-
-
-Promise.all([
-    fetch("items.json").then(r => r.json()),
-    fetch("recipes.json").then(r => r.json())
-])
-.then(([itemData, recipeData]) => {
-
-    items = itemData;
-    recipes = recipeData;
-
-    render();
-
-})
-.catch(() => {
-
-    document.getElementById("recipes").innerHTML =
-        "資料載入失敗";
-
-});
-
-
-
-function createItem(id) {
-
-    if (!id || !items[id])
-        return "";
-
-
-    let item = items[id];
-
-
-    return `
-    <div class="item" onclick="toggleTooltip(event,this)">
-
-        <img src="resource/${item.image}">
-
-        <div class="item-name">
-            ${item.name}
-        </div>
-
-        <div class="tooltip">
-            ${item.name}
-        </div>
-
-    </div>
-    `;
-}
-
-
-
-function createCrafting(pattern) {
-
-    return `
-    <div class="crafting">
-
-    ${
-        pattern.flat().map(id => {
-
-            return `
-            <div class="cell">
-                ${createItem(id)}
-            </div>
-            `;
-
-        }).join("")
-    }
-
-    </div>
-    `;
-}
-
-
-
-function createFurnace(recipe, output) {
-
-    return `
-    <div class="furnace">
-
-        ${createItem(recipe.input)}
-
-        <div class="arrow">
-            🔥 →
-        </div>
-
-        ${createItem(output)}
-
-    </div>
-    `;
-}
-
-
-
-function render() {
-
-    let box =
-        document.getElementById("recipes");
-
-
-    box.innerHTML = "";
-
-
-    for (let output in recipes) {
-
-        let recipe = recipes[output];
-
-
-        let card =
-            document.createElement("div");
-
-        card.className =
-            "recipe-card";
-
-
-        if (recipe.type === "crafting") {
-
-            card.innerHTML = `
-
-            ${createCrafting(recipe.pattern)}
-
-            <div class="arrow">
-                →
-            </div>
-
-            ${createItem(output)}
-
-            `;
-
+    <div id="graph"></div>
+    <div id="tooltip" class="node-label"></div>
+    <script>
+        let items = {};
+        let recipes = {};
+        let cy;
+    
+        const tooltip = document.getElementById("tooltip");
+    
+        Promise.all([
+            fetch("items.json").then(r => r.json()),
+            fetch("recipes.json").then(r => r.json())
+        ])
+        .then(([itemData, recipeData]) => {
+            items = itemData;
+            recipes = recipeData;
+    
+            createGraph();
+        })
+        .catch(error => {
+            document.body.innerHTML = "資料載入失敗";
+            console.error(error);
+        });
+    
+    
+        function createGraph() {
+            const nodes = [];
+            const edges = [];
+            const nodeSet = new Set();
+    
+            function addNode(id) {
+                if (!nodeSet.has(id)) {
+                    nodeSet.add(id);
+    
+                    nodes.push({
+                        data: {
+                            id: id,
+                            name: items[id]?.name ?? id,
+                            image: `resource/${items[id]?.image ?? ""}`
+                        }
+                    });
+                }
+            }
+    
+            for (const output in recipes) {
+                addNode(output);
+    
+                recipes[output].input.forEach(input => {
+                    addNode(input);
+    
+                    edges.push({
+                        data: {
+                            source: input,
+                            target: output
+                        }
+                    });
+                });
+            }
+    
+            cy = cytoscape({
+                container: document.getElementById("graph"),
+    
+                elements: {
+                    nodes: nodes,
+                    edges: edges
+                },
+    
+                style: [
+                    {
+                        selector: "node",
+                        style: {
+                            "label": "data(name)",
+                            "background-image": "data(image)",
+                            "background-fit": "contain",
+                            "background-color": "#555",
+                            "width": 70,
+                            "height": 70,
+                            "font-size": 12,
+                            "color": "white",
+                            "text-valign": "bottom",
+                            "text-margin-y": 8
+                        }
+                    },
+                    {
+                        selector: "edge",
+                        style: {
+                            "width": 2,
+                            "line-color": "#aaa",
+                            "target-arrow-color": "#aaa",
+                            "target-arrow-shape": "triangle"
+                        }
+                    }
+                ],
+    
+                layout: {
+                    name: "dagre",
+                    rankDir: "TB",
+                    nodeSep: 80,
+                    rankSep: 120
+                }
+            });
+    
+            cy.on("mouseover", "node", event => {
+                showTooltip(
+                    event.target.id(),
+                    event.originalEvent
+                );
+            });
+    
+            cy.on("mouseout", "node", () => {
+                hideTooltip();
+            });
+    
+            cy.on("tap", "node", event => {
+                showTooltip(
+                    event.target.id(),
+                    event.originalEvent
+                );
+            });
         }
-
-
-        else if (recipe.type === "furnace") {
-
-            card.innerHTML =
-                createFurnace(recipe, output);
-
+            function showTooltip(id, event) {
+            const recipe = recipes[id];
+    
+            if (!recipe) {
+                tooltip.innerHTML = items[id]?.name ?? id;
+            } else {
+                tooltip.innerHTML = createRecipeHTML(id, recipe);
+            }
+    
+            tooltip.style.display = "block";
+            tooltip.style.left = `${event.pageX + 15}px`;
+            tooltip.style.top = `${event.pageY + 15}px`;
         }
-
-
-        box.appendChild(card);
-
-    }
-
-}
-
-
-
-function toggleTooltip(event, element) {
-
-    event.stopPropagation();
-
-
-    document
-    .querySelectorAll(".item.show")
-    .forEach(item => {
-
-        if (item !== element)
-            item.classList.remove("show");
-
-    });
-
-
-    element.classList.toggle("show");
-
-}
-
-
-
-document.body.onclick = () => {
-
-    document
-    .querySelectorAll(".item.show")
-    .forEach(item => {
-
-        item.classList.remove("show");
-
-    });
-
-};
-
-</script>
-
+    
+    
+        function hideTooltip() {
+            tooltip.style.display = "none";
+        }
+    
+    
+        function createRecipeHTML(id, recipe) {
+            let html = `<b>${items[id].name}</b>`;
+    
+            if (recipe.type === "crafting") {
+                html += `<div class="crafting">`;
+    
+                recipe.pattern.flat().forEach(item => {
+                    html += `
+                        <div class="cell">
+                            ${item ? `<img src="resource/${items[item].image}">` : ""}
+                        </div>
+                    `;
+                });
+    
+                html += "</div>";
+            }
+    
+            if (recipe.type === "furnace") {
+                html += `
+                    <div class="furnace">
+                        <img width="40" src="resource/${items[recipe.input].image}">
+                        🔥 →
+                        <img width="40" src="resource/${items[id].image}">
+                    </div>
+                `;
+            }
+    
+            return html;
+        }
+    
+    
+        document.body.addEventListener("click", event => {
+            if (!event.target.closest("#graph")) {
+                hideTooltip();
+            }
+        });
+    </script>
 </body>
-
 </html>
