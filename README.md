@@ -1,2 +1,2 @@
-# BrilliantwWiki
+# 輝煌伺服器非官方Wiki
 為了給自己查資料而建設的wiki
