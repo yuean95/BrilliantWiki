@@ -1,14 +1,32 @@
 {
     "iron_pickaxe": {
-        "input": [
-            "iron_ingot",
-            "stick"
+        "type": "crafting",
+        "name": "鐵鎬",
+        "image": "iron_pickaxe.png",
+        "pattern": [
+            [
+                "iron_ingot",
+                "iron_ingot",
+                "iron_ingot"
+            ],
+            [
+                "",
+                "stick",
+                ""
+            ],
+            [
+                "",
+                "stick",
+                ""
+            ]
         ]
     },
 
     "iron_ingot": {
-        "input": [
-            "iron_ore"
-        ]
+        "type": "furnace",
+        "name": "鐵錠",
+        "image": "iron_ingot.png",
+        "input": "iron_ore",
+        "fuel": "coal"
     }
 }
