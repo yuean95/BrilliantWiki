@@ -1,0 +1,14 @@
+{
+    "iron_pickaxe": {
+        "input": [
+            "iron_ingot",
+            "stick"
+        ]
+    },
+
+    "iron_ingot": {
+        "input": [
+            "iron_ore"
+        ]
+    }
+}
