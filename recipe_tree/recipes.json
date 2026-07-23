@@ -1,47 +1,23 @@
 {
-    "items":{
-        "iron_ingot":{
-            "name":"鐵錠",
-            "image":"iron_ingot.png"
-        },
+    "iron_pickaxe": {
+        "type": "crafting",
 
-        "stick":{
-            "name":"木棍",
-            "image":"stick.png"
-        },
-
-        "iron_pickaxe":{
-            "name":"鐵鎬",
-            "image":"iron_pickaxe.png"
-        }
-    },
-
-
-    "recipes":{
-
-        "iron_pickaxe":{
-
-            "type":"crafting",
-
-            "pattern":[
-                [
-                    "iron_ingot",
-                    "iron_ingot",
-                    "iron_ingot"
-                ],
-                [
-                    "",
-                    "stick",
-                    ""
-                ],
-                [
-                    "",
-                    "stick",
-                    ""
-                ]
+        "pattern": [
+            [
+                "iron_ingot",
+                "iron_ingot",
+                "iron_ingot"
+            ],
+            [
+                "",
+                "stick",
+                ""
+            ],
+            [
+                "",
+                "stick",
+                ""
             ]
-
-        }
-
+        ]
     }
 }
