@@ -1,181 +1,519 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
+
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Minecraft Recipe Tree</title>
+
 
 <style>
-    .crafting {
-    display:grid;
-    grid-template-columns:repeat(3,64px);
-    gap:4px;
+
+body {
+    background:#202020;
+    color:white;
+    font-family:Arial, "Microsoft JhengHei", sans-serif;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+
+    padding:20px;
 }
 
-.crafting div {
-    width:64px;
-    height:64px;
-    background:#555;
-}
 
-.crafting img {
+/* 配方列表 */
+
+#recipes {
+
     width:100%;
-    image-rendering:pixelated;
+    max-width:800px;
+
 }
-    
-.item {
-    display:inline-block;
+
+
+/* 單個配方 */
+
+.recipe-card {
+
+    background:#303030;
+
+    border:2px solid #777;
+    border-radius:8px;
+
+    padding:20px;
+    margin-bottom:30px;
+
+    display:flex;
+    gap:30px;
+
+    align-items:center;
+
+}
+
+
+/* 成品 */
+
+.output {
+
     text-align:center;
-    margin:20px;
-    position:relative;
 }
+
+
+/* 圖片 */
 
 .item img {
+
     width:64px;
     height:64px;
+
     image-rendering:pixelated;
 }
 
-.recipe {
-    display:none;
-    position:absolute;
-    background:#222;
-    color:white;
-    padding:10px;
-    border:1px solid white;
-    width:150px;
+
+.item-name {
+
+    margin-top:5px;
+
+    text-align:center;
+
 }
 
-.item:hover .recipe {
-    display:block;
+
+
+/* ===== 工作台 ===== */
+
+
+.crafting {
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(3,64px);
+
+    gap:4px;
+
 }
 
-.row {
+
+
+.cell {
+
+    width:64px;
+    height:64px;
+
+    background:#555;
+
     display:flex;
+
+    justify-content:center;
     align-items:center;
+
 }
+
+
+
+.cell img {
+
+    width:56px;
+    height:56px;
+
+}
+
+
+
+/* ===== 熔爐 ===== */
+
+
+.furnace {
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
 
 .arrow {
+
     font-size:40px;
+
 }
+
+
+
+/* ===== Tooltip ===== */
+
+
+.item {
+
+    position:relative;
+
+    cursor:pointer;
+
+}
+
+
+.tooltip {
+
+    display:none;
+
+    position:absolute;
+
+    bottom:80px;
+
+    left:50%;
+
+    transform:
+    translateX(-50%);
+
+
+    background:#111;
+
+    border:2px solid #aaa;
+
+    padding:10px;
+
+    width:180px;
+
+    z-index:10;
+
+}
+
+
+/*
+手機點擊顯示
+*/
+
+.item.show .tooltip {
+
+    display:block;
+
+}
+
+
+
+/*
+電腦 hover 顯示
+*/
+
+@media(hover:hover){
+
+    .item:hover .tooltip {
+
+        display:block;
+
+    }
+
+}
+
+
+
+/* ===== 手機 ===== */
+
+
+@media(max-width:600px){
+
+    .recipe-card {
+
+        flex-direction:column;
+
+        gap:20px;
+
+    }
+
+
+    .tooltip {
+
+        position:fixed;
+
+        bottom:20px;
+
+        left:50%;
+
+        transform:
+        translateX(-50%);
+
+    }
+
+
+}
+
+
+
 </style>
+
 
 </head>
 
 
 <body>
 
-<h1>Minecraft Recipe Tree</h1>
 
-<div id="tree"></div>
+<h1>
+Minecraft Recipe Tree
+</h1>
+
+
+<div id="recipes">
+
+載入中...
+
+</div>
+
 
 
 <script>
 
-const items = {
 
-    iron_pickaxe:{
-        name:"鐵鎬",
-        image:"iron_pickaxe.png"
-    },
-
-    iron_ingot:{
-        name:"鐵錠",
-        image:"iron_ingot.png"
-    },
-
-    iron_ore:{
-        name:"鐵礦石",
-        image:"iron_ore.png"
-    },
-
-    stick:{
-        name:"木棍",
-        image:"stick.png"
-    }
-
-};
-
-
-const recipes = {
-
-    iron_pickaxe:{
-        input:[
-            "iron_ingot",
-            "stick"
-        ]
-    },
-
-    iron_ingot:{
-        input:[
-            "iron_ore"
-        ]
-    }
-
-};
+let data;
 
 
 
-function createCrafting(recipe)
-{
-    let table=document.createElement("div");
-    table.className="crafting";
+/*
+載入 JSON
+*/
+
+fetch("recipe.json")
+
+.then(res=>res.json())
+
+.then(json=>{
+
+    data=json;
+
+    render();
 
 
-    recipe.pattern.flat().forEach(id=>{
+})
 
-        let cell=document.createElement("div");
+.catch(err=>{
 
-        if(id!="")
-        {
-            let item=items[id];
-
-            cell.innerHTML=
-            `<img src="resource/${item.image}">
-             <span>${item.name}</span>`;
-        }
-
-        table.appendChild(cell);
-
-    });
-
-
-    return table;
-}
-
-let tree=document.getElementById("tree");
-
-
-// 簡單展示鐵鎬
-
-let row=document.createElement("div");
-row.className="row";
-
-
-recipes.iron_pickaxe.input.forEach(x=>{
-
-    row.appendChild(
-        createItem(x)
-    );
+    document.getElementById("recipes").innerHTML =
+    "recipe.json 載入失敗";
 
 });
 
 
-let arrow=document.createElement("div");
-arrow.className="arrow";
-arrow.innerHTML="→";
-
-row.appendChild(arrow);
 
 
-row.appendChild(
-    createItem("iron_pickaxe")
-);
+
+/*
+建立物品圖片
+*/
 
 
-tree.appendChild(row);
+function createItem(id)
+{
+
+    if(!id)
+        return "";
+
+
+    let item=data.items[id];
+
+
+    if(!item)
+        return id;
+
+
+
+    return `
+
+    <div class="item"
+         onclick="toggleTooltip(event,this)">
+
+        <img src="resource/${item.image}">
+
+        <div class="item-name">
+            ${item.name}
+        </div>
+
+
+        <div class="tooltip">
+
+            ${item.name}
+
+        </div>
+
+
+    </div>
+
+    `;
+
+}
+
+
+
+
+
+
+/*
+生成配方
+*/
+
+
+function render()
+{
+
+    let box=
+    document.getElementById("recipes");
+
+
+    box.innerHTML="";
+
+
+    for(let id in data.recipes)
+    {
+
+        let recipe=
+        data.recipes[id];
+
+
+        let card=
+        document.createElement("div");
+
+
+        card.className=
+        "recipe-card";
+
+
+
+        if(recipe.type==="crafting")
+        {
+
+            card.innerHTML=
+            `
+
+            <div class="crafting">
+
+            ${
+                recipe.pattern
+                .flat()
+                .map(x=>
+
+                    `
+
+                    <div class="cell">
+
+                    ${x ?
+                    createItem(x)
+                    :
+                    ""}
+
+                    </div>
+
+                    `
+
+                )
+                .join("")
+            }
+
+            </div>
+
+
+            <div class="arrow">
+            →
+            </div>
+
+
+            <div class="output">
+
+            ${createItem(id)}
+
+            </div>
+
+
+            `;
+
+        }
+
+
+
+        else if(recipe.type==="furnace")
+        {
+
+
+            card.innerHTML=
+            `
+
+            ${createItem(recipe.input)}
+
+            <div class="arrow">
+            🔥→
+            </div>
+
+
+            ${createItem(id)}
+
+
+            `;
+
+
+        }
+
+
+
+        box.appendChild(card);
+
+
+    }
+
+
+}
+
+
+
+
+
+
+/*
+手機 tooltip
+*/
+
+
+function toggleTooltip(e,element)
+{
+
+    e.stopPropagation();
+
+
+    document
+    .querySelectorAll(".item.show")
+    .forEach(x=>{
+
+        if(x!==element)
+            x.classList.remove("show");
+
+    });
+
+
+    element.classList.toggle("show");
+
+}
+
+
+
+document.body.onclick=()=>{
+
+    document
+    .querySelectorAll(".item.show")
+    .forEach(x=>
+
+        x.classList.remove("show")
+
+    );
+
+};
 
 
 
 </script>
 
+
 </body>
+
 </html>
