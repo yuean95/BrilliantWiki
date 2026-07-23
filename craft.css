@@ -1,0 +1,7 @@
+.recipe {
+    display:none;
+}
+
+.item:hover .recipe {
+    display:block;
+}
