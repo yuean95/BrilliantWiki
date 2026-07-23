@@ -3,21 +3,9 @@
         "type": "crafting",
 
         "pattern": [
-            [
-                "iron_ingot",
-                "iron_ingot",
-                "iron_ingot"
-            ],
-            [
-                "",
-                "stick",
-                ""
-            ],
-            [
-                "",
-                "stick",
-                ""
-            ]
+            ["iron_ingot" , "iron_ingot" , "iron_ingot"],
+            ["" , "stick", ""],
+            ["" , "stick" , ""]
         ]
     }
 }
