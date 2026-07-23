@@ -4,6 +4,23 @@
 <meta charset="UTF-8">
 
 <style>
+    .crafting {
+    display:grid;
+    grid-template-columns:repeat(3,64px);
+    gap:4px;
+}
+
+.crafting div {
+    width:64px;
+    height:64px;
+    background:#555;
+}
+
+.crafting img {
+    width:100%;
+    image-rendering:pixelated;
+}
+    
 .item {
     display:inline-block;
     text-align:center;
@@ -97,30 +114,32 @@ const recipes = {
 
 
 
-function createItem(id)
+function createCrafting(recipe)
 {
-    let data = items[id];
-
-    let div=document.createElement("div");
-    div.className="item";
+    let table=document.createElement("div");
+    table.className="crafting";
 
 
-    div.innerHTML=`
-        <img src="${data.image}">
-        <div>${data.name}</div>
+    recipe.pattern.flat().forEach(id=>{
 
-        <div class="recipe">
-            合成需要:<br>
-            ${recipes[id]?.input.map(
-                x=>items[x].name
-            ).join("<br>") || "無"}
-        </div>
-    `;
+        let cell=document.createElement("div");
 
-    return div;
+        if(id!="")
+        {
+            let item=items[id];
+
+            cell.innerHTML=
+            `<img src="resource/${item.image}">
+             <span>${item.name}</span>`;
+        }
+
+        table.appendChild(cell);
+
+    });
+
+
+    return table;
 }
-
-
 
 let tree=document.getElementById("tree");
 
