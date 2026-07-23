@@ -7,324 +7,173 @@
 
 <title>Minecraft Recipe Tree</title>
 
-
 <style>
-
 body {
-    background:#202020;
-    color:white;
-    font-family:Arial, "Microsoft JhengHei", sans-serif;
-
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-
-    padding:20px;
+    background: #202020;
+    color: white;
+    font-family: Arial, "Microsoft JhengHei", sans-serif;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
-
-
-/* 配方列表 */
 
 #recipes {
-
-    width:100%;
-    max-width:800px;
-
+    width: 100%;
+    max-width: 900px;
 }
-
-
-/* 單個配方 */
 
 .recipe-card {
+    background: #303030;
+    border: 2px solid #777;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
 
-    background:#303030;
-
-    border:2px solid #777;
-    border-radius:8px;
-
-    padding:20px;
-    margin-bottom:30px;
-
-    display:flex;
-    gap:30px;
-
-    align-items:center;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
 }
-
-
-/* 成品 */
-
-.output {
-
-    text-align:center;
-}
-
-
-/* 圖片 */
-
-.item img {
-
-    width:64px;
-    height:64px;
-
-    image-rendering:pixelated;
-}
-
-
-.item-name {
-
-    margin-top:5px;
-
-    text-align:center;
-
-}
-
-
-
-/* ===== 工作台 ===== */
-
-
-.crafting {
-
-    display:grid;
-
-    grid-template-columns:
-    repeat(3,64px);
-
-    gap:4px;
-
-}
-
-
-
-.cell {
-
-    width:64px;
-    height:64px;
-
-    background:#555;
-
-    display:flex;
-
-    justify-content:center;
-    align-items:center;
-
-}
-
-
-
-.cell img {
-
-    width:56px;
-    height:56px;
-
-}
-
-
-
-/* ===== 熔爐 ===== */
-
-
-.furnace {
-
-    display:flex;
-
-    align-items:center;
-
-    gap:15px;
-
-}
-
-
-.arrow {
-
-    font-size:40px;
-
-}
-
-
-
-/* ===== Tooltip ===== */
-
 
 .item {
-
-    position:relative;
-
-    cursor:pointer;
-
+    position: relative;
+    text-align: center;
+    cursor: pointer;
 }
 
+.item img {
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+}
+
+.item-name {
+    margin-top: 5px;
+}
 
 .tooltip {
+    display: none;
+    position: absolute;
 
-    display:none;
+    bottom: 85px;
+    left: 50%;
+    transform: translateX(-50%);
 
-    position:absolute;
+    background: #111;
+    border: 2px solid #aaa;
+    padding: 10px;
 
-    bottom:80px;
-
-    left:50%;
-
-    transform:
-    translateX(-50%);
-
-
-    background:#111;
-
-    border:2px solid #aaa;
-
-    padding:10px;
-
-    width:180px;
-
-    z-index:10;
-
+    width: 180px;
+    z-index: 10;
 }
-
-
-/*
-手機點擊顯示
-*/
 
 .item.show .tooltip {
-
-    display:block;
-
+    display: block;
 }
 
-
-
-/*
-電腦 hover 顯示
-*/
-
-@media(hover:hover){
-
+@media (hover:hover) {
     .item:hover .tooltip {
-
-        display:block;
-
+        display: block;
     }
-
 }
 
+.crafting {
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    gap: 4px;
+}
 
+.cell {
+    width: 64px;
+    height: 64px;
 
-/* ===== 手機 ===== */
+    background: #555;
 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-@media(max-width:600px){
+.cell .item img {
+    width: 56px;
+    height: 56px;
+}
+
+.arrow {
+    font-size: 40px;
+}
+
+.furnace {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+@media(max-width:600px) {
 
     .recipe-card {
-
-        flex-direction:column;
-
-        gap:20px;
-
+        flex-direction: column;
     }
-
 
     .tooltip {
-
-        position:fixed;
-
-        bottom:20px;
-
-        left:50%;
-
-        transform:
-        translateX(-50%);
-
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
     }
-
-
 }
-
-
-
 </style>
-
 
 </head>
 
 
 <body>
 
-
-<h1>
-Minecraft Recipe Tree
-</h1>
-
+<h1>Minecraft Recipe Tree</h1>
 
 <div id="recipes">
-
 載入中...
-
 </div>
-
 
 
 <script>
 
+let items = {};
+let recipes = {};
 
-let data;
 
+Promise.all([
+    fetch("items.json").then(r => r.json()),
+    fetch("recipes.json").then(r => r.json())
+])
+.then(([itemData, recipeData]) => {
 
-
-/*
-載入 JSON
-*/
-
-fetch("recipe.json")
-
-.then(res=>res.json())
-
-.then(json=>{
-
-    data=json;
+    items = itemData;
+    recipes = recipeData;
 
     render();
 
-
 })
-
-.catch(err=>{
+.catch(() => {
 
     document.getElementById("recipes").innerHTML =
-    "recipe.json 載入失敗";
+        "資料載入失敗";
 
 });
 
 
 
+function createItem(id) {
 
-
-/*
-建立物品圖片
-*/
-
-
-function createItem(id)
-{
-
-    if(!id)
+    if (!id || !items[id])
         return "";
 
 
-    let item=data.items[id];
-
-
-    if(!item)
-        return id;
-
+    let item = items[id];
 
 
     return `
-
-    <div class="item"
-         onclick="toggleTooltip(event,this)">
+    <div class="item" onclick="toggleTooltip(event,this)">
 
         <img src="resource/${item.image}">
 
@@ -332,161 +181,123 @@ function createItem(id)
             ${item.name}
         </div>
 
-
         <div class="tooltip">
-
             ${item.name}
-
         </div>
 
-
     </div>
-
     `;
-
 }
 
 
 
+function createCrafting(pattern) {
 
+    return `
+    <div class="crafting">
 
+    ${
+        pattern.flat().map(id => {
 
-/*
-生成配方
-*/
-
-
-function render()
-{
-
-    let box=
-    document.getElementById("recipes");
-
-
-    box.innerHTML="";
-
-
-    for(let id in data.recipes)
-    {
-
-        let recipe=
-        data.recipes[id];
-
-
-        let card=
-        document.createElement("div");
-
-
-        card.className=
-        "recipe-card";
-
-
-
-        if(recipe.type==="crafting")
-        {
-
-            card.innerHTML=
-            `
-
-            <div class="crafting">
-
-            ${
-                recipe.pattern
-                .flat()
-                .map(x=>
-
-                    `
-
-                    <div class="cell">
-
-                    ${x ?
-                    createItem(x)
-                    :
-                    ""}
-
-                    </div>
-
-                    `
-
-                )
-                .join("")
-            }
-
+            return `
+            <div class="cell">
+                ${createItem(id)}
             </div>
+            `;
 
+        }).join("")
+    }
+
+    </div>
+    `;
+}
+
+
+
+function createFurnace(recipe, output) {
+
+    return `
+    <div class="furnace">
+
+        ${createItem(recipe.input)}
+
+        <div class="arrow">
+            🔥 →
+        </div>
+
+        ${createItem(output)}
+
+    </div>
+    `;
+}
+
+
+
+function render() {
+
+    let box =
+        document.getElementById("recipes");
+
+
+    box.innerHTML = "";
+
+
+    for (let output in recipes) {
+
+        let recipe = recipes[output];
+
+
+        let card =
+            document.createElement("div");
+
+        card.className =
+            "recipe-card";
+
+
+        if (recipe.type === "crafting") {
+
+            card.innerHTML = `
+
+            ${createCrafting(recipe.pattern)}
 
             <div class="arrow">
-            →
+                →
             </div>
 
-
-            <div class="output">
-
-            ${createItem(id)}
-
-            </div>
-
+            ${createItem(output)}
 
             `;
 
         }
 
 
+        else if (recipe.type === "furnace") {
 
-        else if(recipe.type==="furnace")
-        {
-
-
-            card.innerHTML=
-            `
-
-            ${createItem(recipe.input)}
-
-            <div class="arrow">
-            🔥→
-            </div>
-
-
-            ${createItem(id)}
-
-
-            `;
-
+            card.innerHTML =
+                createFurnace(recipe, output);
 
         }
-
 
 
         box.appendChild(card);
 
-
     }
-
 
 }
 
 
 
+function toggleTooltip(event, element) {
 
-
-
-/*
-手機 tooltip
-*/
-
-
-function toggleTooltip(e,element)
-{
-
-    e.stopPropagation();
+    event.stopPropagation();
 
 
     document
     .querySelectorAll(".item.show")
-    .forEach(x=>{
+    .forEach(item => {
 
-        if(x!==element)
-            x.classList.remove("show");
+        if (item !== element)
+            item.classList.remove("show");
 
     });
 
@@ -497,22 +308,19 @@ function toggleTooltip(e,element)
 
 
 
-document.body.onclick=()=>{
+document.body.onclick = () => {
 
     document
     .querySelectorAll(".item.show")
-    .forEach(x=>
+    .forEach(item => {
 
-        x.classList.remove("show")
+        item.classList.remove("show");
 
-    );
+    });
 
 };
 
-
-
 </script>
-
 
 </body>
 
