@@ -2,125 +2,161 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Minecraft Recipe Tree</title>
 
 <style>
-body {
-    background: #222;
-    color: white;
-    font-family: sans-serif;
-}
-
-.tree {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    margin: 50px;
-}
-
 .item {
-    position: relative;
-    text-align: center;
+    display:inline-block;
+    text-align:center;
+    margin:20px;
+    position:relative;
 }
 
 .item img {
-    width: 64px;
-    height: 64px;
-    image-rendering: pixelated;
-    background: #555;
-    border: 2px solid #aaa;
+    width:64px;
+    height:64px;
+    image-rendering:pixelated;
 }
 
-.name {
-    margin-top: 5px;
-}
-
-/* 配方提示框 */
 .recipe {
-    display: none;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 90px;
-
-    background: #111;
-    border: 2px solid #aaa;
-    padding: 10px;
-    width: 180px;
-
-    z-index: 10;
+    display:none;
+    position:absolute;
+    background:#222;
+    color:white;
+    padding:10px;
+    border:1px solid white;
+    width:150px;
 }
 
-/* 滑鼠移入 */
 .item:hover .recipe {
-    display: block;
+    display:block;
+}
+
+.row {
+    display:flex;
+    align-items:center;
 }
 
 .arrow {
-    font-size: 40px;
+    font-size:40px;
 }
 </style>
 
 </head>
 
+
 <body>
 
-<h1>簡易合成樹</h1>
+<h1>Minecraft Recipe Tree</h1>
 
-<div class="tree">
+<div id="tree"></div>
 
-    <!-- 原木 -->
-    <div class="item">
-        <img src="oak_log.png">
-        <div class="name">橡木原木</div>
+
+<script>
+
+const items = {
+
+    iron_pickaxe:{
+        name:"鐵鎬",
+        image:"iron_pickaxe.png"
+    },
+
+    iron_ingot:{
+        name:"鐵錠",
+        image:"iron_ingot.png"
+    },
+
+    iron_ore:{
+        name:"鐵礦石",
+        image:"iron_ore.png"
+    },
+
+    stick:{
+        name:"木棍",
+        image:"stick.png"
+    }
+
+};
+
+
+const recipes = {
+
+    iron_pickaxe:{
+        input:[
+            "iron_ingot",
+            "stick"
+        ]
+    },
+
+    iron_ingot:{
+        input:[
+            "iron_ore"
+        ]
+    }
+
+};
+
+
+
+function createItem(id)
+{
+    let data = items[id];
+
+    let div=document.createElement("div");
+    div.className="item";
+
+
+    div.innerHTML=`
+        <img src="${data.image}">
+        <div>${data.name}</div>
 
         <div class="recipe">
-            自然生成<br>
-            可採集
+            合成需要:<br>
+            ${recipes[id]?.input.map(
+                x=>items[x].name
+            ).join("<br>") || "無"}
         </div>
-    </div>
+    `;
+
+    return div;
+}
 
 
-    <div class="arrow">
-        →
-    </div>
+
+let tree=document.getElementById("tree");
 
 
-    <!-- 木板 -->
-    <div class="item">
-        <img src="oak_planks.png">
-        <div class="name">橡木木板</div>
+// 簡單展示鐵鎬
 
-        <div class="recipe">
-            合成：<br>
-            橡木原木 ×1<br>
-            ↓<br>
-            木板 ×4
-        </div>
-    </div>
+let row=document.createElement("div");
+row.className="row";
 
 
-    <div class="arrow">
-        →
-    </div>
+recipes.iron_pickaxe.input.forEach(x=>{
+
+    row.appendChild(
+        createItem(x)
+    );
+
+});
 
 
-    <!-- 工作台 -->
-    <div class="item">
-        <img src="crafting_table.png">
-        <div class="name">工作台</div>
+let arrow=document.createElement("div");
+arrow.className="arrow";
+arrow.innerHTML="→";
 
-        <div class="recipe">
-            合成：<br>
-            木板 ×4<br>
-            ↓<br>
-            工作台 ×1
-        </div>
-    </div>
+row.appendChild(arrow);
 
 
-</div>
+row.appendChild(
+    createItem("iron_pickaxe")
+);
 
+
+tree.appendChild(row);
+
+
+
+</script>
 
 </body>
 </html>
