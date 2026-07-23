@@ -2,24 +2,35 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+
+    <!-- 適配手機與不同解析度 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Recipe Tree</title>
+
+    <title>輝煌合成樹</title>
+
+    <!-- Cytoscape：負責建立圖形網路 -->
     <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <!-- Dagre：負責自動排列節點位置 -->
     <script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
+    <!-- Cytoscape 與 Dagre 的整合套件 -->
     <script src="https://unpkg.com/cytoscape-dagre/cytoscape-dagre.js"></script>
+
     <style>
+        /* 頁面基本設定 */
         body {
             margin: 0;
             background: #202020;
             color: white;
             font-family: Arial, "Microsoft JhengHei", sans-serif;
         }
-        
+
+        /* Cytoscape 圖形顯示區域 */
         #graph {
             width: 100vw;
             height: 100vh;
         }
-        
+
+        /* 滑鼠移到物品節點時顯示的資訊框 */
         .node-label {
             position: absolute;
             background: #111;
@@ -29,16 +40,20 @@
             display: none;
             width: 220px;
             z-index: 10;
+
+            /* 避免 tooltip 阻擋滑鼠事件 */
             pointer-events: none;
         }
-        
+
+        /* 工作台合成表格 */
         .crafting {
             display: grid;
             grid-template-columns: repeat(3,45px);
             gap: 2px;
             margin-top: 8px;
         }
-        
+
+        /* 合成格子 */
         .cell {
             width: 45px;
             height: 45px;
@@ -47,195 +62,465 @@
             justify-content: center;
             align-items: center;
         }
-        
+
+        /* Minecraft 物品圖片保持像素風格 */
         .cell img {
             width: 38px;
             height: 38px;
             image-rendering: pixelated;
         }
-        
+
+        /* 熔爐配方區域 */
         .furnace {
             margin-top: 8px;
         }
     </style>
 </head>
+
 <body>
+    <!-- Cytoscape 圖形容器 -->
     <div id="graph"></div>
+
+    <!-- 滑鼠提示框 -->
     <div id="tooltip" class="node-label"></div>
-    <script>
-        let items = {};
-        let recipes = {};
-        let cy;
-    
-        const tooltip = document.getElementById("tooltip");
-    
-        Promise.all([
-            fetch("items.json").then(r => r.json()),
-            fetch("recipes.json").then(r => r.json())
-        ])
-        .then(([itemData, recipeData]) => {
-            items = itemData;
-            recipes = recipeData;
-    
-            createGraph();
-        })
-        .catch(error => {
-            document.body.innerHTML = "資料載入失敗";
-            console.error(error);
-        });
-    
-    
-        function createGraph() {
-            const nodes = [];
-            const edges = [];
-            const nodeSet = new Set();
-    
-            function addNode(id) {
-                if (!nodeSet.has(id)) {
-                    nodeSet.add(id);
-    
-                    nodes.push({
-                        data: {
-                            id: id,
-                            name: items[id]?.name ?? id,
-                            image: `resource/${items[id]?.image ?? ""}`
-                        }
-                    });
-                }
+
+<script>
+    /*資料結構
+        items:
+        {
+            "minecraft:iron_ingot": {
+                name: "鐵錠",
+                image: "iron_ingot.png"
             }
-    
-            for (const output in recipes) {
-                addNode(output);
-    
-                recipes[output].input.forEach(input => {
-                    addNode(input);
-    
-                    edges.push({
-                        data: {
-                            source: input,
-                            target: output
-                        }
-                    });
-                });
+        }
+
+        recipes:
+        {
+            "minecraft:iron_pickaxe": {
+                type: "crafting",
+                input: [...]
             }
+        }
+    */
+
+    let items = {};
+    let recipes = {};
+
+    // Cytoscape 實例
+    let cy;
+    // tooltip DOM 元素
+    const tooltip = document.getElementById("tooltip");
+
+    /*
+        載入外部 JSON 資料
+
+        items.json:
+        儲存物品名稱與圖片位置
+
+        recipes.json:
+        儲存合成與燒製資料
+    */
     
-            cy = cytoscape({
-                container: document.getElementById("graph"),
+    Promise.all([
+        fetch("items.json").then(r => r.json()),
+        fetch("recipes.json").then(r => r.json())
+    ])
+
+    .then(([itemData, recipeData]) => {
+        // 保存資料供其他函式使用
+        items = itemData;
+        recipes = recipeData;
+
+        // 建立合成樹
+        createGraph();
+    })
+
+    .catch(error => {
+        // JSON 載入失敗時顯示錯誤
+        document.body.innerHTML = "資料載入失敗";
+
+        console.error(error);
+    });
+
+    /*
+        建立 Minecraft 配方關係圖
+
+        節點(Node):
+            代表物品
+
+        邊(Edge):
+            代表「材料 -> 成品」的關係
+    */
     
-                elements: {
-                    nodes: nodes,
-                    edges: edges
-                },
-    
-                style: [
-                    {
-                        selector: "node",
-                        style: {
-                            "label": "data(name)",
-                            "background-image": "data(image)",
-                            "background-fit": "contain",
-                            "background-color": "#555",
-                            "width": 70,
-                            "height": 70,
-                            "font-size": 12,
-                            "color": "white",
-                            "text-valign": "bottom",
-                            "text-margin-y": 8
-                        }
-                    },
-                    {
-                        selector: "edge",
-                        style: {
-                            "width": 2,
-                            "line-color": "#aaa",
-                            "target-arrow-color": "#aaa",
-                            "target-arrow-shape": "triangle"
-                        }
+    function createGraph() {
+        const nodes = [];
+        const edges = [];
+
+        // 用來避免重複建立節點
+        const nodeSet = new Set();
+        /*
+            新增物品節點
+
+            id:
+                Minecraft 物品 ID
+
+            例如:
+                minecraft:iron_ingot
+        */
+        function addNode(id) {
+
+            if (!nodeSet.has(id)) {
+
+                nodeSet.add(id);
+
+
+                nodes.push({
+
+                    data: {
+
+                        id: id,
+
+                        // 有翻譯名稱則使用，否則顯示 ID
+                        name: items[id]?.name ?? id,
+
+
+                        // 設定物品圖片路徑
+                        image:
+                            `resource/${items[id]?.image ?? ""}`
                     }
-                ],
-    
-                layout: {
-                    name: "dagre",
-                    rankDir: "TB",
-                    nodeSep: 80,
-                    rankSep: 120
-                }
-            });
-    
-            cy.on("mouseover", "node", event => {
-                showTooltip(
-                    event.target.id(),
-                    event.originalEvent
-                );
-            });
-    
-            cy.on("mouseout", "node", () => {
-                hideTooltip();
-            });
-    
-            cy.on("tap", "node", event => {
-                showTooltip(
-                    event.target.id(),
-                    event.originalEvent
-                );
-            });
-        }
-            function showTooltip(id, event) {
-            const recipe = recipes[id];
-    
-            if (!recipe) {
-                tooltip.innerHTML = items[id]?.name ?? id;
-            } else {
-                tooltip.innerHTML = createRecipeHTML(id, recipe);
-            }
-    
-            tooltip.style.display = "block";
-            tooltip.style.left = `${event.pageX + 15}px`;
-            tooltip.style.top = `${event.pageY + 15}px`;
-        }
-    
-    
-        function hideTooltip() {
-            tooltip.style.display = "none";
-        }
-    
-    
-        function createRecipeHTML(id, recipe) {
-            let html = `<b>${items[id].name}</b>`;
-    
-            if (recipe.type === "crafting") {
-                html += `<div class="crafting">`;
-    
-                recipe.pattern.flat().forEach(item => {
-                    html += `
-                        <div class="cell">
-                            ${item ? `<img src="resource/${items[item].image}">` : ""}
-                        </div>
-                    `;
                 });
-    
-                html += "</div>";
             }
-    
-            if (recipe.type === "furnace") {
-                html += `
-                    <div class="furnace">
-                        <img width="40" src="resource/${items[recipe.input].image}">
-                        🔥 →
-                        <img width="40" src="resource/${items[id].image}">
-                    </div>
-                `;
-            }
-    
-            return html;
         }
-    
-    
-        document.body.addEventListener("click", event => {
-            if (!event.target.closest("#graph")) {
-                hideTooltip();
+
+
+
+        /*
+            遍歷所有配方
+
+            output:
+                合成結果
+
+            input:
+                所需材料
+        */
+        for (const output in recipes) {
+
+
+            // 建立成品節點
+            addNode(output);
+
+
+
+            // 建立材料 -> 成品的連線
+            recipes[output].input.forEach(input => {
+
+
+                addNode(input);
+
+
+                edges.push({
+
+                    data: {
+
+                        source: input,
+
+                        target: output
+                    }
+                });
+            });
+        }
+
+
+
+        /*
+            初始化 Cytoscape
+
+            將 nodes 與 edges
+            轉換成可視化圖形
+        */
+        cy = cytoscape({
+
+            container:
+                document.getElementById("graph"),
+
+
+
+            elements: {
+
+                nodes: nodes,
+
+                edges: edges
+            },
+
+
+            // 節點與線條樣式
+            style: [
+
+                {
+                    selector: "node",
+
+                    style: {
+
+                        // 顯示物品名稱
+                        "label": "data(name)",
+
+
+                        // 使用 Minecraft 圖片
+                        "background-image": "data(image)",
+
+
+                        "background-fit": "contain",
+
+                        "background-color": "#555",
+
+
+                        "width": 70,
+
+                        "height": 70,
+
+
+                        "font-size": 12,
+
+                        "color": "white",
+
+
+                        // 名稱顯示在圖片下方
+                        "text-valign": "bottom",
+
+                        "text-margin-y": 8
+                    }
+                },
+
+
+                {
+
+                    selector: "edge",
+
+                    style: {
+
+                        "width": 2,
+
+                        "line-color": "#aaa",
+
+                        "target-arrow-color": "#aaa",
+
+
+                        // 箭頭指向合成結果
+                        "target-arrow-shape": "triangle"
+                    }
+                }
+            ],
+
+
+
+            /*
+                Dagre 自動排列
+
+                rankDir:
+                    TB = 上到下
+
+                nodeSep:
+                    同層節點間距
+
+                rankSep:
+                    不同層距離
+            */
+            layout: {
+
+                name: "dagre",
+
+                rankDir: "TB",
+
+                nodeSep: 80,
+
+                rankSep: 120
             }
         });
-    </script>
+
+
+
+        // 滑鼠移入節點
+        cy.on("mouseover", "node", event => {
+
+            showTooltip(
+                event.target.id(),
+                event.originalEvent
+            );
+        });
+
+
+
+        // 滑鼠移出節點
+        cy.on("mouseout", "node", () => {
+
+            hideTooltip();
+        });
+
+
+
+        // 點擊節點也顯示資訊
+        cy.on("tap", "node", event => {
+
+            showTooltip(
+                event.target.id(),
+                event.originalEvent
+            );
+        });
+    }
+
+
+
+    /*
+        顯示物品資訊
+
+        如果該物品沒有配方:
+            只顯示名稱
+
+        如果有配方:
+            顯示合成方式
+    */
+    function showTooltip(id, event) {
+
+        const recipe = recipes[id];
+
+
+        if (!recipe) {
+
+            tooltip.innerHTML =
+                items[id]?.name ?? id;
+
+        } else {
+
+            tooltip.innerHTML =
+                createRecipeHTML(id, recipe);
+        }
+
+
+
+        tooltip.style.display = "block";
+
+
+        // 設定提示框位置
+        tooltip.style.left =
+            `${event.pageX + 15}px`;
+
+        tooltip.style.top =
+            `${event.pageY + 15}px`;
+    }
+
+
+
+    // 隱藏提示框
+    function hideTooltip() {
+
+        tooltip.style.display = "none";
+    }
+
+
+
+    /*
+        產生配方 HTML
+
+        支援:
+            1. 工作台合成
+            2. 熔爐燒製
+    */
+    function createRecipeHTML(id, recipe) {
+
+
+        let html =
+            `<b>${items[id].name}</b>`;
+
+
+
+        // 工作台合成
+        if (recipe.type === "crafting") {
+
+
+            html += `<div class="crafting">`;
+
+
+
+            /*
+                pattern:
+
+                [
+                    [木板, 木板],
+                    [空, 木棍],
+                    [空, 木棍]
+                ]
+
+                展平成 3x3 格子
+            */
+            recipe.pattern.flat()
+            .forEach(item => {
+
+
+                html += `
+
+                    <div class="cell">
+
+                        ${
+                            item
+                            ?
+                            `<img src="resource/${items[item].image}">`
+                            :
+                            ""
+                        }
+
+                    </div>
+
+                `;
+            });
+
+
+
+            html += "</div>";
+        }
+
+
+
+        // 熔爐燒製
+        if (recipe.type === "furnace") {
+
+
+            html += `
+
+                <div class="furnace">
+
+                    <img width="40"
+                    src="resource/${items[recipe.input].image}">
+
+                    🔥 →
+
+                    <img width="40"
+                    src="resource/${items[id].image}">
+
+                </div>
+
+            `;
+        }
+
+
+        return html;
+    }
+
+
+
+    /*
+        點擊圖形外部時關閉 tooltip
+    */
+    document.body.addEventListener("click", event => {
+
+        if (!event.target.closest("#graph")) {
+
+            hideTooltip();
+        }
+
+    });
+
+
+</script>
+
 </body>
 </html>
